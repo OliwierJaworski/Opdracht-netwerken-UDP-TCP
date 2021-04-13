@@ -27,13 +27,13 @@
 #include <errno.h>
 #include <string.h>
 
-void print_ip_address( struct sockaddr_storage * ip )
+void print_ip_address( unsigned short family, struct sockaddr * ip )
 {
 	void * ip_address;
 	char * ip_version;
 	char ip_string[INET6_ADDRSTRLEN];
 
-	if( ip->ss_family == AF_INET )
+	if( family == AF_INET )
 	{ // IPv4
 		struct sockaddr_in *ipv4 = (struct sockaddr_in *)ip;
 		ip_address = &(ipv4->sin_addr);
@@ -46,8 +46,18 @@ void print_ip_address( struct sockaddr_storage * ip )
 		ip_version = "IPv6";
 	}
 
-	inet_ntop( ip->ss_family, ip_address, ip_string, sizeof ip_string );
+	inet_ntop( family, ip_address, ip_string, sizeof ip_string );
 	printf( "%s -> %s\n", ip_version, ip_string );
+}
+
+void ai_print_ip_address( struct addrinfo * ip )
+{
+	print_ip_address( ip->ai_family, ip->ai_addr );
+}
+
+void ss_print_ip_address( struct sockaddr_storage * ip )
+{
+	print_ip_address( ip->ss_family, (struct sockaddr*) ip );
 }
 
 int main( int argc, char * argv[] )
@@ -62,43 +72,56 @@ int main( int argc, char * argv[] )
 		exit( 1 );
 	}
 
-#ifdef IPv4
-	struct sockaddr_in internet_address;
-	memset( &internet_address, '\0', sizeof internet_address );
-	
-	internet_address.sin_family = AF_INET;
-	internet_address.sin_port = htons( 24042 ); //Host to Network Short (byte order)
-	inet_pton( AF_INET, INADDR_ANY, &internet_address.sin_addr );
+	struct addrinfo hints, *result_head, *result_item;
+	int gai_return;
 
-	int internet_socket;
-	
-	internet_socket = socket( PF_INET, SOCK_DGRAM, 0 ); //UDP == SOCK_DGRAM ; TCP == SOCK_STREAM
-#else
-	struct sockaddr_in6 internet_address;
-	memset( &internet_address, '\0', sizeof internet_address ); //https://stackoverflow.com/questions/25703798/getting-error-10049-address-not-avai-on-sendto-in-udp-connection-but-bind
-	
-	internet_address.sin6_family = AF_INET6;
-	internet_address.sin6_port = htons( 24042 ); //Host to Network Short (byte order)
-	internet_address.sin6_addr = in6addr_any; //in6addr_any == :: ; in6addr_loopback == ::1
-	//inet_pton( AF_INET6, IN6ADDR_ANY_INIT, &internet_address.sin6_addr );
+	memset( &hints, 0, sizeof hints );
+	hints.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
+	hints.ai_socktype = SOCK_DGRAM;
+	hints.ai_flags = AI_PASSIVE; // use ANY address == use my IP
 
-	int internet_socket;
-	
-	internet_socket = socket( PF_INET6, SOCK_DGRAM, 0 ); //https://docs.microsoft.com/en-us/windows/win32/api/winsock2/nf-winsock2-socket
-#endif
-
-	if( internet_socket == -1 )
+	gai_return = getaddrinfo( NULL, "24042", &hints, &result_head );
+	if( gai_return != 0 )
 	{
-		perror( "socket" );
+		fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( gai_return ) );
+		exit( 2 );
 	}
 
-	int return_code;
-	return_code = bind( internet_socket, (struct sockaddr *) &internet_address, sizeof internet_address );
-	if( return_code == -1 )
+	int internet_socket;
+
+	result_item = result_head; //take first of the linked list
+	while( result_item != NULL ) //while the pointer is valid
 	{
-		close( internet_socket );
-		perror( "bind" );
+		internet_socket = socket( result_item->ai_family, result_item->ai_socktype, result_item->ai_protocol );
+		if( internet_socket == -1 )
+		{
+			perror( "socket" );
+		}
+		else
+		{
+			int return_code;
+			return_code = bind( internet_socket, result_item->ai_addr, result_item->ai_addrlen );
+			if( return_code == -1 )
+			{
+				close( internet_socket );
+				perror( "bind" );
+			}
+			else
+			{
+				printf( "Bind to " );
+				ai_print_ip_address( result_item );
+				break; //stop running through the linked list
+			}
+		}
+		result_item = result_item->ai_next; //take next in the linked list
 	}
+	if( result_item == NULL )
+	{
+		fprintf( stderr, "socket: no valid socket address found\n" );
+		exit( 3 );
+	}
+	freeaddrinfo( result_head ); //free the linked list
+
 
 	int number_of_bytes_received = 0;
 	char buffer[1000];
@@ -109,13 +132,12 @@ int main( int argc, char * argv[] )
 	
 	if( number_of_bytes_received == -1 )
 	{
-		printf( "errno = %d\n", WSAGetLastError() ); //https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 		perror( "recvfrom" );
 	}
 	buffer[number_of_bytes_received] = '\0';
 	
 	printf( "Got %s from ", buffer );
-	print_ip_address( &client_ip_address );
+	ss_print_ip_address( &client_ip_address );
 
 	close( internet_socket );
 
