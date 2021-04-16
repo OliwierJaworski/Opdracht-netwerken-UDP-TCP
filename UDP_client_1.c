@@ -67,10 +67,36 @@ int main( int argc, char * argv[] )
 	{
 		perror( "socket" );
 	}
+	
+	/*
+	struct sockaddr * ia = (struct sockaddr *) &internet_address;
+	for( int i = 0 ; i < 14 ; i++ )
+	{
+		printf( "%x ", ia->sa_data[i] );
+	}
+	printf( "\n" );
+	
+	struct sockaddr sa;
+	sa.sa_family = AF_INET;
+	sa.sa_data[0] = 24042 >> 8;
+	sa.sa_data[1] = 24042 & 0xFF;
+	sa.sa_data[2] = 127;
+	sa.sa_data[3] = 0;
+	sa.sa_data[4] = 0;
+	sa.sa_data[5] = 1;
+	sa.sa_data[6] = 0;
+	sa.sa_data[7] = 0;
+	sa.sa_data[8] = 0;
+	sa.sa_data[9] = 0;
+	sa.sa_data[10] = 0;
+	sa.sa_data[11] = 0;
+	sa.sa_data[12] = 0;
+	sa.sa_data[13] = 0;
+	*/
 
 	int number_of_bytes_send = 0;
 	
-	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, (struct sockaddr *) &internet_address, sizeof internet_address );
+	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, (struct sockaddr *) &internet_address, sizeof internet_address );//&sa, sizeof sa );
 	
 	if( number_of_bytes_send == -1 )
 	{
