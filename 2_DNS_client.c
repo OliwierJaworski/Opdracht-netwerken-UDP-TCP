@@ -1,4 +1,4 @@
-// gcc UDP_client_1.c -lws2_32 -o UDP_client_1.exe -D IPv4
+// gcc 2_DNS_client.c -lws2_32 -o 2_DNS_client.exe
 // _WIN32_WINNT version constants --> https://stackoverflow.com/questions/15370033/how-to-use-inet-pton-with-the-mingw-compiler
 //
 // #define _WIN32_WINNT_NT4                    0x0400 // Windows NT 4.0
@@ -19,39 +19,31 @@
 
 #include <winsock2.h>
 #include <ws2tcpip.h>
-#include <windows.h>
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <unistd.h>
-#include <errno.h>
-#include <string.h>
 
 int main( int argc, char * argv[] )
 {
-	WSADATA wsaData; // if this doesn't work
-	//WSAData wsaData; // then try this instead
-
-	// MAKEWORD(1,1) for Winsock 1.1, MAKEWORD(2,0) for Winsock 2.0:
-	if( WSAStartup( MAKEWORD(2,0), &wsaData ) != 0 )
+	WSADATA wsaData; //WSAData wsaData; //Could be different case
+	if( WSAStartup( MAKEWORD(2,0), &wsaData ) != 0 ) // MAKEWORD(1,1) for Winsock 1.1, MAKEWORD(2,0) for Winsock 2.0:
 	{
 		fprintf( stderr, "WSAStartup failed.\n" );
 		exit( 1 );
 	}
 
-	struct addrinfo hints, *result_head, *result_item;
-	int gai_return;
+	struct addrinfo internet_address_setup, *result_head, *result_item;
+	memset( &internet_address_setup, 0, sizeof internet_address_setup );
+	internet_address_setup.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
+	internet_address_setup.ai_socktype = SOCK_DGRAM;
 
-	memset( &hints, 0, sizeof hints );
-	hints.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
-	hints.ai_socktype = SOCK_DGRAM;
-
-	gai_return = getaddrinfo( "localhost.pxl-ea-ict.be", NULL, &hints, &result_head );
-//	gai_return = getaddrinfo( "example.com", NULL, &hints, &result_head ); //nslookup example.com
-//	gai_return = getaddrinfo( "cnn.com", NULL, &hints, &result_head ); //https://webmasters.stackexchange.com/questions/10927/using-multiple-a-records-for-my-domain-do-web-browsers-ever-try-more-than-one
-	if( gai_return != 0 )
+	int getaddrinfo_return;
+	getaddrinfo_return = getaddrinfo( "localhost.pxl-ea-ict.be", NULL, &internet_address_setup, &result_head );
+//	getaddrinfo_return = getaddrinfo( "example.com", NULL, &hints, &result_head ); //nslookup example.com
+//	getaddrinfo_return = getaddrinfo( "cnn.com", NULL, &hints, &result_head ); //https://webmasters.stackexchange.com/questions/10927/using-multiple-a-records-for-my-domain-do-web-browsers-ever-try-more-than-one
+	if( getaddrinfo_return != 0 )
 	{
-		fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( gai_return ) );
+		fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
 		exit( 2 );
 	}
 
@@ -76,7 +68,7 @@ int main( int argc, char * argv[] )
 		}
 
 		inet_ntop( result_item->ai_family, ip_address, ip_string, sizeof ip_string );
-		printf( "%s : %s\n", ip_version, ip_string );
+		printf( "%s -> %s\n", ip_version, ip_string );
 
 		result_item = result_item->ai_next; //take next in the linked list
 	}
