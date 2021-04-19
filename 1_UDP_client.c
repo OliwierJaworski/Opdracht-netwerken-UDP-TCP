@@ -38,8 +38,9 @@ int main( int argc, char * argv[] )
 	memset( &internet_address, '\0', sizeof internet_address );
 	internet_address.sin_family = AF_INET;
 	internet_address.sin_port = htons( 24042 ); //Host to Network Short (byte order)
+	internet_address.sin_addr.s_addr = htonl( INADDR_LOOPBACK ); //INADDR_LOOPBACK == localhost
 
-	int inet_pton_return;
+/*	int inet_pton_return;
 	inet_pton_return = inet_pton( AF_INET, "127.0.0.1", &internet_address.sin_addr );
 	if( inet_pton_return < 1 )
 	{
@@ -52,7 +53,7 @@ int main( int argc, char * argv[] )
 			perror( "inet_pton" );
 		}
 		exit( 2 );
-	}
+	}*/
 
 	int internet_socket;
 	internet_socket = socket( PF_INET, SOCK_DGRAM, 0 ); //UDP == SOCK_DGRAM ; TCP == SOCK_STREAM
@@ -92,7 +93,7 @@ int main( int argc, char * argv[] )
 	}
 
 	int number_of_bytes_send = 0;
-	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, (struct sockaddr *) &internet_address, sizeof internet_address );//&sa, sizeof sa );
+	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, (struct sockaddr *) &internet_address, sizeof internet_address );
 	if( number_of_bytes_send == -1 )
 	{
 		printf( "errno = %d\n", WSAGetLastError() ); //https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
