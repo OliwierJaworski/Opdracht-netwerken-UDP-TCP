@@ -7,6 +7,7 @@
 #include <string.h> //for memset
 #include <stdio.h> //for fprintf, perror
 #include <errno.h> //for errno
+#include <stdlib.h> //for exit
 
 int main( int argc, char * argv[] )
 {

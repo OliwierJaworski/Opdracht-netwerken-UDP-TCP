@@ -7,6 +7,7 @@
 #include <string.h> //for memset
 #include <stdio.h> //for fprintf, perror
 #include <errno.h> //for errno
+#include <stdlib.h> //for exit
 
 void print_ip_address( unsigned short family, struct sockaddr * ip )
 {
