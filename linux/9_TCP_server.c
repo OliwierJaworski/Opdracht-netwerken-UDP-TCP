@@ -1,27 +1,13 @@
-// gcc 9_TCP_server.c -lws2_32 -o 9_TCP_server.exe
-// _WIN32_WINNT version constants --> https://stackoverflow.com/questions/15370033/how-to-use-inet-pton-with-the-mingw-compiler
-//
-// #define _WIN32_WINNT_NT4                    0x0400 // Windows NT 4.0
-// #define _WIN32_WINNT_WIN2K                  0x0500 // Windows 2000
-// #define _WIN32_WINNT_WINXP                  0x0501 // Windows XP
-// #define _WIN32_WINNT_WS03                   0x0502 // Windows Server 2003
-// #define _WIN32_WINNT_WIN6                   0x0600 // Windows Vista
-// #define _WIN32_WINNT_VISTA                  0x0600 // Windows Vista
-// #define _WIN32_WINNT_WS08                   0x0600 // Windows Server 2008
-// #define _WIN32_WINNT_LONGHORN               0x0600 // Windows Vista
-// #define _WIN32_WINNT_WIN7                   0x0601 // Windows 7
-// #define _WIN32_WINNT_WIN8                   0x0602 // Windows 8
-// #define _WIN32_WINNT_WINBLUE                0x0603 // Windows 8.1
-// #define _WIN32_WINNT_WINTHRESHOLD           0x0A00 // Windows 10
-// #define _WIN32_WINNT_WIN10                  0x0A00 // Windows 10
-//
-#define _WIN32_WINNT 0x0601
-
-#include <winsock2.h>
-#include <ws2tcpip.h>
-
-#include <stdio.h>
-#include <unistd.h>
+#include <sys/socket.h> //for sockaddr, socket, socket
+#include <sys/types.h> //for size_t
+#include <netdb.h> //for getaddrinfo
+#include <unistd.h> //for close
+#include <netinet/in.h> //for sockaddr_in
+#include <arpa/inet.h> //for htons, htonl, inet_pton, inet_ntop
+#include <string.h> //for memset
+#include <stdio.h> //for fprintf, perror
+#include <errno.h> //for errno
+#include <stdlib.h> //for exit
 
 void print_ip_address( unsigned short family, struct sockaddr * ip )
 {
@@ -58,13 +44,6 @@ void ss_print_ip_address( struct sockaddr_storage * ip )
 
 int main( int argc, char * argv[] )
 {
-	WSADATA wsaData; //WSAData wsaData; //Could be different case
-	if( WSAStartup( MAKEWORD(2,0), &wsaData ) != 0 ) // MAKEWORD(1,1) for Winsock 1.1, MAKEWORD(2,0) for Winsock 2.0:
-	{
-		fprintf( stderr, "WSAStartup failed.\n" );
-		exit( 1 );
-	}
-
 	struct addrinfo internet_address_setup, *result_head, *result_item;
 	memset( &internet_address_setup, 0, sizeof internet_address_setup );
 	internet_address_setup.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
@@ -130,7 +109,6 @@ int main( int argc, char * argv[] )
 	client_socket = accept( internet_socket, (struct sockaddr *) &client_ip_address, &client_ip_address_length );
 	if( client_socket == -1 )
 	{
-		printf( "errno = %d\n", WSAGetLastError() ); //https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 		close( internet_socket );
 		perror( "accept" );
 		exit( 6 );
@@ -144,22 +122,19 @@ int main( int argc, char * argv[] )
 	number_of_bytes_received = recv( client_socket, buffer, ( sizeof buffer ) - 1, 0 );
 	if( number_of_bytes_received == -1 )
 	{
-		printf( "errno = %d\n", WSAGetLastError() ); //https://docs.microsoft.com/en-us/windows/win32/winsock/windows-sockets-error-codes-2
 		perror( "recv" );
 	}
 	buffer[number_of_bytes_received] = '\0';
 	printf( "Got %s\n", buffer );
 
 	int shutdown_return;
-	shutdown_return = shutdown( client_socket, SD_RECEIVE ); //Shutdown Send == SD_SEND ; Receive == SD_RECEIVE ; Send/Receive == SD_BOTH ; https://blog.netherlabs.nl/articles/2009/01/18/the-ultimate-so_linger-page-or-why-is-my-tcp-not-reliable --> Linux : Shutdown Send == SHUT_WR ; Receive == SHUT_RD ; Send/Receive == SHUT_RDWR
+	shutdown_return = shutdown( client_socket, SHUT_RD ); //Shutdown Send == SD_SEND ; Receive == SD_RECEIVE ; Send/Receive == SD_BOTH ; https://blog.netherlabs.nl/articles/2009/01/18/the-ultimate-so_linger-page-or-why-is-my-tcp-not-reliable --> Linux : Shutdown Send == SHUT_WR ; Receive == SHUT_RD ; Send/Receive == SHUT_RDWR
 	if( shutdown_return == -1 )
 	{
 		perror( "shutdown" );
 	}
 
 	close( client_socket );
-
-	WSACleanup();
 
 	return 0;
 }
