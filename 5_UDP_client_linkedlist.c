@@ -85,22 +85,34 @@ int initialization( struct sockaddr ** internet_address, socklen_t * internet_ad
 		exit( 1 );
 	}
 
-	//Step 1.2
-	int internet_socket;
-	internet_socket = socket( internet_address_result->ai_family, internet_address_result->ai_socktype, internet_address_result->ai_protocol );
-	if( internet_socket == -1 )
+	int internet_socket = -1;
+	struct addrinfo * internet_address_result_iterator = internet_address_result;
+	while( internet_address_result_iterator != NULL )
 	{
-		perror( "socket" );
-		freeaddrinfo( internet_address_result );
-		exit( 2 );
+		//Step 1.2
+		internet_socket = socket( internet_address_result->ai_family, internet_address_result->ai_socktype, internet_address_result->ai_protocol );
+		if( internet_socket == -1 )
+		{
+			perror( "socket" );
+		}
+		else
+		{
+			//Step 1.3
+			*internet_address_length = internet_address_result->ai_addrlen;
+			*internet_address = (struct sockaddr *) malloc( internet_address_result->ai_addrlen );
+			memcpy( *internet_address, internet_address_result->ai_addr, internet_address_result->ai_addrlen );
+			break;
+		}
+		internet_address_result_iterator = internet_address_result_iterator->ai_next;
 	}
 
-	//Step 1.3
-	*internet_address_length = internet_address_result->ai_addrlen;
-	*internet_address = (struct sockaddr *) malloc( internet_address_result->ai_addrlen );
-	memcpy( *internet_address, internet_address_result->ai_addr, internet_address_result->ai_addrlen );
-
 	freeaddrinfo( internet_address_result );
+
+	if( internet_socket == -1 )
+	{
+		fprintf( stderr, "socket: no valid socket address found\n" );
+		exit( 2 );
+	}
 
 	return internet_socket;
 }
