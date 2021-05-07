@@ -32,6 +32,15 @@ int main( int argc, char * argv[] )
 		exit( 1 );
 	}
 
+/*
+	struct addrinfo in;
+	memset( &in, 0, sizeof in );
+	in.ai_family = AF_INET; //IPv4
+	struct addrinfo *out = NULL;
+	getaddrinfo( "pxl.be", NULL, &in, &out );
+	printf( "%d.%d.%d.%d \n", (unsigned char) out->ai_addr->sa_data[2], (unsigned char) out->ai_addr->sa_data[3], (unsigned char) out->ai_addr->sa_data[4], (unsigned char) out->ai_addr->sa_data[5] );
+*/
+
 	struct addrinfo internet_address_setup, *result_head, *result_item;
 	memset( &internet_address_setup, 0, sizeof internet_address_setup );
 	internet_address_setup.ai_family = AF_UNSPEC; // AF_INET or AF_INET6 to force version
