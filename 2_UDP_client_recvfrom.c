@@ -22,6 +22,7 @@ int main( int argc, char * argv[] )
 	memset( &internet_address_setup, 0, sizeof internet_address_setup );
 	internet_address_setup.ai_family = AF_UNSPEC;
 	internet_address_setup.ai_socktype = SOCK_DGRAM;
+	internet_address_setup.ai_flags = AI_PASSIVE;
 	getaddrinfo( "127.0.0.1", "24042", &internet_address_setup, &internet_address );
 
 	//Step 1.2
@@ -39,7 +40,8 @@ int main( int argc, char * argv[] )
 	//Step 2.2
 	int number_of_bytes_received = 0;
 	char buffer[1000];
-	number_of_bytes_received = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, internet_address->ai_addr, internet_address->ai_addrlen );
+	socklen_t internet_address_length = internet_address->ai_addrlen;
+	number_of_bytes_received = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, internet_address->ai_addr, &internet_address_length );
 	buffer[number_of_bytes_received] = '\0';
 	printf( "Received : %s\n", buffer );
 
