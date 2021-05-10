@@ -9,12 +9,7 @@
 	int OSInit( void )
 	{
 		WSADATA wsaData;
-		int WSAError = WSAStartup( MAKEWORD( 2, 0 ), &wsaData ); 
-		if( WSAError != 0 )
-		{
-			fprintf( stderr, "WSAStartup errno = %d\n", WSAError );
-			exit( -1 );
-		}
+		WSAStartup( MAKEWORD( 2, 0 ), &wsaData ); 
 	}
 	int OSCleanup( void )
 	{
