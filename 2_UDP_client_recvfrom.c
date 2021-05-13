@@ -35,7 +35,7 @@ int main( int argc, char * argv[] )
 	memset( &internet_address_setup, 0, sizeof internet_address_setup );
 	internet_address_setup.ai_family = AF_UNSPEC;
 	internet_address_setup.ai_socktype = SOCK_DGRAM;
-	getaddrinfo( "127.0.0.1", "24042", &internet_address_setup, &internet_address );
+	getaddrinfo( "::1", "24042", &internet_address_setup, &internet_address );
 
 	//Step 1.2
 	int internet_socket;
