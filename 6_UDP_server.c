@@ -77,7 +77,7 @@ int initialization()
 	internet_address_setup.ai_family = AF_UNSPEC;
 	internet_address_setup.ai_socktype = SOCK_DGRAM;
 	internet_address_setup.ai_flags = AI_PASSIVE;
-	int getaddrinfo_return = getaddrinfo( NULL, "24042", &internet_address_setup, &internet_address_result );
+	int getaddrinfo_return = getaddrinfo( NULL, "62573", &internet_address_setup, &internet_address_result );
 	if( getaddrinfo_return != 0 )
 	{
 		fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
@@ -124,29 +124,39 @@ int initialization()
 
 void execution( int internet_socket )
 {
-	//Step 2.1
-	int number_of_bytes_received = 0;
-	char buffer[1000];
-	struct sockaddr_storage client_internet_address;
-	socklen_t client_internet_address_length = sizeof client_internet_address;
-	number_of_bytes_received = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, (struct sockaddr *) &client_internet_address, &client_internet_address_length );
-	if( number_of_bytes_received == -1 )
-	{
-		perror( "recvfrom" );
-	}
-	else
-	{
-		buffer[number_of_bytes_received] = '\0';
-		printf( "Received : %s\n", buffer );
-	}
+    //Step 2.1
+    int number_of_bytes_received = 0;
+    char buffer[1000];
+    struct sockaddr_storage client_internet_address;
+    socklen_t client_internet_address_length = sizeof client_internet_address;
+    number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0,
+                                        (struct sockaddr *) &client_internet_address,
+                                        &client_internet_address_length);
+    if (number_of_bytes_received == -1) {
+        perror("recvfrom");
+    } else {
+        buffer[number_of_bytes_received] = '\0';
+        printf("Received : %s\n", buffer);
+    }
 
-	//Step 2.2
-	int number_of_bytes_send = 0;
-	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, (struct sockaddr *) &client_internet_address, client_internet_address_length );
-	if( number_of_bytes_send == -1 )
-	{
-		perror( "sendto" );
-	}
+    //als de client GO send->code uitvoeren
+    if( strncmp(buffer,"GO",2)==0)
+    {
+        while(1)
+        {
+        int RandomGetal =rand();
+        char StrRandomGetal [100];
+        sprintf(StrRandomGetal, "%d",RandomGetal);
+        //Step 2.2
+        int number_of_bytes_send = 0;
+        number_of_bytes_send = sendto(internet_socket, StrRandomGetal, strlen(StrRandomGetal), 0,
+                                      (struct sockaddr *) &client_internet_address, client_internet_address_length);
+        if (number_of_bytes_send == -1)
+        {
+            perror("sendto");
+        }
+        }
+    }
 }
 
 void cleanup( int internet_socket )
