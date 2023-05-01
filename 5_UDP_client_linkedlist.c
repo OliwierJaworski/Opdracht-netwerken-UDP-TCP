@@ -171,6 +171,16 @@ void execution( int internet_socket, struct sockaddr * internet_address, socklen
             }
         }
     }
+    if(strncmp(buffer,"OK",3)==0)
+    {
+        int number_of_bytes_send = 0;
+        number_of_bytes_send = sendto(internet_socket, "KTNXBYE", 3, 0, internet_address,
+                                      internet_address_length);
+        if (number_of_bytes_send == -1)
+        {
+            perror("sendto");
+        }
+    }
 }
 
 void cleanup( int internet_socket, struct sockaddr * internet_address )
