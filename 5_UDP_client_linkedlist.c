@@ -6,6 +6,8 @@
 	#include <unistd.h> //for close
 	#include <stdlib.h> //for exit
 	#include <string.h> //for memset
+    #include <time.h>
+    #include <sys/timeb.h>
 	void OSInit( void )
 	{
 		WSADATA wsaData;
@@ -78,7 +80,7 @@ int initialization( struct sockaddr ** internet_address, socklen_t * internet_ad
 	memset( &internet_address_setup, 0, sizeof internet_address_setup );
 	internet_address_setup.ai_family = AF_UNSPEC;
 	internet_address_setup.ai_socktype = SOCK_DGRAM;
-	int getaddrinfo_return = getaddrinfo( "::1", "24042", &internet_address_setup, &internet_address_result );
+	int getaddrinfo_return = getaddrinfo( "::1", "62573", &internet_address_setup, &internet_address_result );
 	if( getaddrinfo_return != 0 )
 	{
 		fprintf( stderr, "getaddrinfo: %s\n", gai_strerror( getaddrinfo_return ) );
@@ -119,6 +121,8 @@ int initialization( struct sockaddr ** internet_address, socklen_t * internet_ad
 
 void execution( int internet_socket, struct sockaddr * internet_address, socklen_t internet_address_length )
 {
+    char buffer[1000];
+
     //code blijft gaan tot server=>"ok"
     while(strncmp(buffer,"ok",3)!=0)
     {
@@ -134,15 +138,14 @@ void execution( int internet_socket, struct sockaddr * internet_address, socklen
 
         DWORD timeout = 1 * 1000;
         setsockopt(internet_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
-
         clock_t start_time = clock();
         clock_t current_time = clock();
+        clock_t elapsed_time = current_time - start_time;
 
-        if ((current_time - start_time) < timeout)
+        if (elapsed_time < timeout)
         {
-            //data receive van server
+            //data receive van serverC
             int number_of_bytes_received = 0;
-            char buffer[1000];
             number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0, internet_address,
                                                 &internet_address_length);
             if (number_of_bytes_received == -1) {
@@ -152,18 +155,20 @@ void execution( int internet_socket, struct sockaddr * internet_address, socklen
                 printf("Received : %s\n", buffer);
             }
         }
-        else if((current_time - start_time) >= timeout)
+        else if (elapsed_time >=timeout)
         {
             //stuur grootste getal
-            char CurrentHighestNumber [100];
+            int CurrentHighestNumber=0;
+            char strCurrentHighestNumber[100];
 
-            if (atoi(buffer) > atoi(CurrentHighestNumber))
+            if (atoi(buffer) > CurrentHighestNumber)
             {
-                atoi(CurrentHighestNumber) = atoi(buffer);
+                CurrentHighestNumber = atoi(buffer);
             }
+            sprintf(strCurrentHighestNumber, "%d",CurrentHighestNumber);
 
             int number_of_bytes_send = 0;
-            number_of_bytes_send = sendto(internet_socket, CurrentHighestNumber , 3, 0, internet_address,
+            number_of_bytes_send = sendto(internet_socket, strCurrentHighestNumber , strlen(strCurrentHighestNumber), 0, internet_address,
                                           internet_address_length);
             if (number_of_bytes_send == -1)
             {
@@ -174,7 +179,7 @@ void execution( int internet_socket, struct sockaddr * internet_address, socklen
     if(strncmp(buffer,"OK",3)==0)
     {
         int number_of_bytes_send = 0;
-        number_of_bytes_send = sendto(internet_socket, "KTNXBYE", 3, 0, internet_address,
+        number_of_bytes_send = sendto(internet_socket, "KTNXBYE", 8, 0, internet_address,
                                       internet_address_length);
         if (number_of_bytes_send == -1)
         {
