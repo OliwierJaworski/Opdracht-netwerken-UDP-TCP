@@ -6,6 +6,8 @@
 	#include <unistd.h> //for close
 	#include <stdlib.h> //for exit
 	#include <string.h> //for memset
+    #include <time.h>
+    #include <sys/timeb.h>
 	void OSInit( void )
 	{
 		WSADATA wsaData;
@@ -124,37 +126,75 @@ int initialization()
 
 void execution( int internet_socket )
 {
-    //Step 2.1
-    int number_of_bytes_received = 0;
-    char buffer[1000];
-    struct sockaddr_storage client_internet_address;
-    socklen_t client_internet_address_length = sizeof client_internet_address;
-    number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0,
-                                        (struct sockaddr *) &client_internet_address,
-                                        &client_internet_address_length);
-    if (number_of_bytes_received == -1) {
-        perror("recvfrom");
-    } else {
-        buffer[number_of_bytes_received] = '\0';
-        printf("Received : %s\n", buffer);
-    }
+    DWORD timeout = 1 * 1000;
+    setsockopt(internet_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
+
+    clock_t start_time = clock();
+    clock_t current_time = clock();
+    clock_t elapsed_time = current_time - start_time;
+
+
+
+
+        //Step 2.1
+        int number_of_bytes_received = 0;
+        char buffer[1000];
+        struct sockaddr_storage client_internet_address;
+        socklen_t client_internet_address_length = sizeof client_internet_address;
+        number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0,
+                                            (struct sockaddr *) &client_internet_address,
+                                            &client_internet_address_length);
+        if (number_of_bytes_received == -1) {
+            perror("recvfrom");
+        } else {
+            buffer[number_of_bytes_received] = '\0';
+            printf("Received : %s\n", buffer);
+        }
+
 
     //als de client GO send->code uitvoeren
+
     if( strncmp(buffer,"GO",2)==0)
     {
-        while(1)
-        {
-        int RandomGetal =rand();
-        char StrRandomGetal [100];
-        sprintf(StrRandomGetal, "%d",RandomGetal);
-        //Step 2.2
-        int number_of_bytes_send = 0;
-        number_of_bytes_send = sendto(internet_socket, StrRandomGetal, strlen(StrRandomGetal), 0,
-                                      (struct sockaddr *) &client_internet_address, client_internet_address_length);
-        if (number_of_bytes_send == -1)
-        {
-            perror("sendto");
-        }
+
+
+       for(int i=0;i<43;i++) {
+           int RandomGetal = rand();
+           char StrRandomGetal[100];
+           sprintf(StrRandomGetal, "%d", RandomGetal);
+           //Step 2.2
+           int number_of_bytes_send = 0;
+           number_of_bytes_send = sendto(internet_socket, StrRandomGetal, strlen(StrRandomGetal), 0,
+                                         (struct sockaddr *) &client_internet_address, client_internet_address_length);
+           if (number_of_bytes_send == -1) {
+               perror("sendto");
+           }
+       }
+
+    }
+
+    int receive_numbers[42];
+    int num_values_received = 0;
+
+    //ontvangen van grootste waarde
+    while(elapsed_time < timeout && num_values_received <43)
+    {
+        clock_t current_time = clock();
+        elapsed_time = current_time - start_time;
+
+        num_values_received+=1;
+        int number_of_bytes_received = 0;
+        char buffer[1000];
+        struct sockaddr_storage client_internet_address;
+        socklen_t client_internet_address_length = sizeof client_internet_address;
+        number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0,
+                                            (struct sockaddr *) &client_internet_address,
+                                            &client_internet_address_length);
+        if (number_of_bytes_received == -1) {
+            perror("recvfrom");
+        } else {
+            buffer[number_of_bytes_received] = '\0';
+            printf("Received : %s\n", buffer);
         }
     }
 }

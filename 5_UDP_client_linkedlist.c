@@ -122,23 +122,24 @@ int initialization( struct sockaddr ** internet_address, socklen_t * internet_ad
 void execution( int internet_socket, struct sockaddr * internet_address, socklen_t internet_address_length )
 {
     char buffer[1000];
+//step 1 stuur "GO"
+    int number_of_bytes_send = 0;
+    number_of_bytes_send = sendto(internet_socket, "GO", 3, 0, internet_address,
+                                  internet_address_length);
+    if (number_of_bytes_send == -1)
+    {
+        perror("sendto");
+    }
+
+    clock_t start_time = clock();
 
     //code blijft gaan tot server=>"ok"
     while(strncmp(buffer,"ok",3)!=0)
     {
 
-        //step 1 stuur "GO"
-        int number_of_bytes_send = 0;
-        number_of_bytes_send = sendto(internet_socket, "GO", 3, 0, internet_address,
-                                      internet_address_length);
-        if (number_of_bytes_send == -1)
-        {
-            perror("sendto");
-        }
-
         DWORD timeout = 1 * 1000;
         setsockopt(internet_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
-        clock_t start_time = clock();
+
         clock_t current_time = clock();
         clock_t elapsed_time = current_time - start_time;
 
