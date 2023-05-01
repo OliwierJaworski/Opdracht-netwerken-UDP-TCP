@@ -25,7 +25,7 @@
 	#include <sys/socket.h> //for sockaddr, socket, socket
 	#include <sys/types.h> //for size_t
 	#include <netdb.h> //for getaddrinfo
-	#include <netinet/in.h> //for sockaddr_in
+	#include <netinet/in.h> //for sockaddr_i
 	#include <arpa/inet.h> //for htons, htonl, inet_pton, inet_ntop
 	#include <errno.h> //for errno
 	#include <stdio.h> //for fprintf, perror
@@ -119,27 +119,58 @@ int initialization( struct sockaddr ** internet_address, socklen_t * internet_ad
 
 void execution( int internet_socket, struct sockaddr * internet_address, socklen_t internet_address_length )
 {
-	//Step 2.1
-	int number_of_bytes_send = 0;
-	number_of_bytes_send = sendto( internet_socket, "Hello UDP world!", 16, 0, internet_address, internet_address_length );
-	if( number_of_bytes_send == -1 )
-	{
-		perror( "sendto" );
-	}
+    //code blijft gaan tot server=>"ok"
+    while(strncmp(buffer,"ok",3)!=0)
+    {
 
-	//Step 2.2
-	int number_of_bytes_received = 0;
-	char buffer[1000];
-	number_of_bytes_received = recvfrom( internet_socket, buffer, ( sizeof buffer ) - 1, 0, internet_address, &internet_address_length );
-	if( number_of_bytes_received == -1 )
-	{
-		perror( "recvfrom" );
-	}
-	else
-	{
-		buffer[number_of_bytes_received] = '\0';
-		printf( "Received : %s\n", buffer );
-	}
+        //step 1 stuur "GO"
+        int number_of_bytes_send = 0;
+        number_of_bytes_send = sendto(internet_socket, "GO", 3, 0, internet_address,
+                                      internet_address_length);
+        if (number_of_bytes_send == -1)
+        {
+            perror("sendto");
+        }
+
+        DWORD timeout = 1 * 1000;
+        setsockopt(internet_socket, SOL_SOCKET, SO_RCVTIMEO, (const char*)&timeout, sizeof timeout);
+
+        clock_t start_time = clock();
+        clock_t current_time = clock();
+
+        if ((current_time - start_time) < timeout)
+        {
+            //data receive van server
+            int number_of_bytes_received = 0;
+            char buffer[1000];
+            number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0, internet_address,
+                                                &internet_address_length);
+            if (number_of_bytes_received == -1) {
+                perror("recvfrom");
+            } else {
+                buffer[number_of_bytes_received] = '\0';
+                printf("Received : %s\n", buffer);
+            }
+        }
+        else if((current_time - start_time) >= timeout)
+        {
+            //stuur grootste getal
+            char CurrentHighestNumber [100];
+
+            if (atoi(buffer) > atoi(CurrentHighestNumber))
+            {
+                atoi(CurrentHighestNumber) = atoi(buffer);
+            }
+
+            int number_of_bytes_send = 0;
+            number_of_bytes_send = sendto(internet_socket, CurrentHighestNumber , 3, 0, internet_address,
+                                          internet_address_length);
+            if (number_of_bytes_send == -1)
+            {
+                perror("sendto");
+            }
+        }
+    }
 }
 
 void cleanup( int internet_socket, struct sockaddr * internet_address )
