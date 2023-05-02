@@ -143,6 +143,8 @@ void execution( int internet_socket, struct sockaddr * internet_address, socklen
         clock_t current_time = clock();
         clock_t elapsed_time = current_time - start_time;
 
+        int CurrentHighestNumber=0;
+        char strCurrentHighestNumber[100];
         if (elapsed_time < timeout)
         {
             //data receive van serverC
@@ -155,18 +157,15 @@ void execution( int internet_socket, struct sockaddr * internet_address, socklen
                 buffer[number_of_bytes_received] = '\0';
                 printf("Received : %s\n", buffer);
             }
-        }
-        else if (elapsed_time >=timeout)
-        {
-            //stuur grootste getal
-            int CurrentHighestNumber=0;
-            char strCurrentHighestNumber[100];
-
             if (atoi(buffer) > CurrentHighestNumber)
             {
                 CurrentHighestNumber = atoi(buffer);
             }
             sprintf(strCurrentHighestNumber, "%d",CurrentHighestNumber);
+        }
+        else if (elapsed_time >=timeout)
+        {
+            //stuur grootste getal
 
             int number_of_bytes_send = 0;
             number_of_bytes_send = sendto(internet_socket, strCurrentHighestNumber , strlen(strCurrentHighestNumber), 0, internet_address,
