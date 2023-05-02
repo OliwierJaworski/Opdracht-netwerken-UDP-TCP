@@ -154,49 +154,63 @@ void execution( int internet_socket )
 
     //als de client GO send->code uitvoeren
 
-    if( strncmp(buffer,"GO",2)==0)
-    {
+
+        if( strncmp(buffer,"GO",2)==0) {
+            for (int iteration = 0; iteration < 2; iteration++) {
+                {
 
 
-        for(int i=0;i<43;i++) {
-            int RandomGetal = rand();
-            char StrRandomGetal[100];
-            sprintf(StrRandomGetal, "%d", RandomGetal);
-            //Step 2.2
-            int number_of_bytes_send = 0;
-            number_of_bytes_send = sendto(internet_socket, StrRandomGetal, strlen(StrRandomGetal), 0,
-                                          (struct sockaddr *) &client_internet_address, client_internet_address_length);
-            if (number_of_bytes_send == -1) {
-                perror("sendto");
+                    for (int i = 0; i < 43; i++) {
+                        int RandomGetal = rand();
+                        char StrRandomGetal[100];
+                        sprintf(StrRandomGetal, "%d", RandomGetal);
+                        //Step 2.2
+                        int number_of_bytes_send = 0;
+                        number_of_bytes_send = sendto(internet_socket, StrRandomGetal, strlen(StrRandomGetal), 0,
+                                                      (struct sockaddr *) &client_internet_address,
+                                                      client_internet_address_length);
+                        if (number_of_bytes_send == -1) {
+                            perror("sendto");
+                        }
+                    }
+
+                }
+
+                int receive_numbers[42];
+                int num_values_received = 0;
+
+                //ontvangen van grootste waarde
+                while (elapsed_time < timeout && num_values_received < 43) {
+                    clock_t current_time = clock();
+                    elapsed_time = current_time - start_time;
+
+                    num_values_received += 1;
+                    int number_of_bytes_received = 0;
+                    char buffer[1000];
+                    struct sockaddr_storage client_internet_address;
+                    socklen_t client_internet_address_length = sizeof client_internet_address;
+                    number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0,
+                                                        (struct sockaddr *) &client_internet_address,
+                                                        &client_internet_address_length);
+                    if (number_of_bytes_received == -1) {
+                        perror("recvfrom");
+                    } else {
+                        buffer[number_of_bytes_received] = '\0';
+                        printf("Received : %s\n", buffer);
+                    }
+                }
+
             }
         }
+                int number_of_bytes_send = 0;
+                number_of_bytes_send = sendto(internet_socket, "OK", 3, 0,
+                                              (struct sockaddr *) &client_internet_address,
+                                              client_internet_address_length);
+                if (number_of_bytes_send == -1) {
+                    perror("sendto");
+                }
 
-    }
 
-    int receive_numbers[42];
-    int num_values_received = 0;
-
-    //ontvangen van grootste waarde
-    while(elapsed_time < timeout && num_values_received <43)
-    {
-        clock_t current_time = clock();
-        elapsed_time = current_time - start_time;
-
-        num_values_received+=1;
-        int number_of_bytes_received = 0;
-        char buffer[1000];
-        struct sockaddr_storage client_internet_address;
-        socklen_t client_internet_address_length = sizeof client_internet_address;
-        number_of_bytes_received = recvfrom(internet_socket, buffer, (sizeof buffer) - 1, 0,
-                                            (struct sockaddr *) &client_internet_address,
-                                            &client_internet_address_length);
-        if (number_of_bytes_received == -1) {
-            perror("recvfrom");
-        } else {
-            buffer[number_of_bytes_received] = '\0';
-            printf("Received : %s\n", buffer);
-        }
-    }
 }
 
 void cleanup( int internet_socket )
